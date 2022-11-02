@@ -15,7 +15,7 @@
 #include "servernetoperations.h"
 #include "common.h"
 
-/* Überprüfen und Auslesen der Kommandozeilenparameter,
+/* ï¿½berprï¿½fen und Auslesen der Kommandozeilenparameter,
    setzt globale Variable svport */
 int extractArgs(int argc, char **argv, short* svport)
 {
@@ -64,6 +64,7 @@ int process_get_request(int sock, clientrequest *req)
 
 int main(int argc, char **argv)
 {
+
   short svport;
   int listensocket;
 
@@ -77,6 +78,9 @@ int main(int argc, char **argv)
   if(create_listensocket(&listensocket, svport)) {
     err("Error in listensocket()\n");
   }
+
+  printf("Server is listening on port %d\n", svport);
+  fflush(stdout);
 
   /* Service-Schleife */
   while (1) {
@@ -94,7 +98,7 @@ int main(int argc, char **argv)
       continue;
     }
     
-    /* Verarbeitung und evtl. Rückgabe an den Client */
+    /* Verarbeitung und evtl. Rï¿½ckgabe an den Client */
     switch(req.cmd) {
     
       case FP_GET:
