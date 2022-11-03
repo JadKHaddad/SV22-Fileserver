@@ -15,4 +15,9 @@
 
 void err(char *msg);
 
+/* Sendet &len Bytes beginnend bei msg ueber sock,
+   Gibt -1 bei Fehler und 0 bei Erfolg zurueck,
+   Tatsächliche Anzahl gesendeter Bytes wird in len geschrieben */
+int sendMsg(int sock, char *msg, int *len);
+
 #endif

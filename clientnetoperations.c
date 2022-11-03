@@ -10,15 +10,6 @@
 
 #define BUFSIZE 512
 
-/* Sendet *len Bytes beginnend bei msg ueber sock,
-   Gibt -1 bei Fehler und 0 bei Erfolg zurück,
-   Tatsächliche Anzahl gesendeter Bytes wird in len geschrieben.
-   Implementieren Sie partielles senden (siehe Übung 2). */
-int sendMsg(int sock, char *msg, int *len)
-{
-  return -1;
-}
-
 /* Verbindung zum Server auf sock herstellen.
    Zunächst muss ein Socket erstellt werden (IPv4 TCP) und die Adresse
    des Server aufgelöst werden (hostname+svport).
@@ -52,13 +43,14 @@ int connect_server(int *sock, char *hostname, short svport)
 }
 
 /* Den übergebenen clientrequest über den socket senden.
-   Achten Sie dabei darauf alle nötigen Daten zu senden (sendMsg)
+   Achten Sie dabei darauf alle noetigen Daten zu senden (sendMsg)
    und ggf. die byte-order umzudrehen.
    Gibt -1 bei Fehler und 0 bei Erfolg zurueck
 */
 int send_request(int sock, clientrequest *req)
 {
-  return -1;
+  int len = (int)sizeof(clientrequest);
+  return sendMsg(sock, (void *)req, &len);
 }
 
 /* Datei über socket empfangen und ausgeben.
@@ -69,7 +61,17 @@ int send_request(int sock, clientrequest *req)
  */
 int recv_and_print_file(int sock, int filelen)
 {
-  return -1;
+  char buf[BUFSIZE];
+  int rec = recv(sock, buf, BUFSIZE - 1, filelen);
+  if (rec == -1)
+  {
+    perror("recv");
+    return -1;
+  }
+  buf[rec] = '\0';
+  printf("%s\n", buf);
+  fflush(stdout);
+  return 0;
 }
 
 /* Ueber den Socket sock einen serverresponse empfangen.
@@ -78,5 +80,11 @@ int recv_and_print_file(int sock, int filelen)
    Gibt -1 bei Fehler und 0 bei Erfolg zurueck */
 int recv_reply(int sock, serverresponse *resp)
 {
-  return -1;
+  int bytesrcvd = recv(sock, (void *)resp, sizeof(serverresponse), 0);
+  if (bytesrcvd < 0)
+  {
+    perror("recv");
+    return -1;
+  }
+  return 0;
 }

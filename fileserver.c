@@ -17,9 +17,10 @@
 
 /* �berpr�fen und Auslesen der Kommandozeilenparameter,
    setzt globale Variable svport */
-int extractArgs(int argc, char **argv, short* svport)
+int extractArgs(int argc, char **argv, short *svport)
 {
-  if (argc != 2) {
+  if (argc != 2)
+  {
     fprintf(stderr, "Usage: %s port\n", argv[0]);
     return EXIT_FAILURE;
   }
@@ -30,7 +31,7 @@ int extractArgs(int argc, char **argv, short* svport)
 /* Verarbeitet einen FP_GET-request und sendet die Antwort */
 int process_get_request(int sock, clientrequest *req)
 {
-  char* fbuf;
+  char *fbuf;
   int bytesread, retval;
   serverresponse resp;
 
@@ -42,16 +43,18 @@ int process_get_request(int sock, clientrequest *req)
   bytesread = getFile(req->filename, &fbuf);
 
   /* Datei nicht gefunden */
-  if(bytesread == -1) {
+  if (bytesread == -1)
+  {
     /* Datei nicht gefunden, error senden */
     resp.retcode = FP_FILENOTFOUND;
     resp.filelen = 0;
-    
+
     retval = send_response_and_file(sock, resp, NULL);
   }
 
   /* Datei gefunden */
-  else {
+  else
+  {
     /* Datei gefunden, OK und Datei senden */
     resp.retcode = FP_OK;
     resp.filelen = bytesread;
@@ -61,57 +64,58 @@ int process_get_request(int sock, clientrequest *req)
   return retval;
 }
 
-
 int main(int argc, char **argv)
 {
 
   short svport;
   int listensocket;
 
-
   /* Argumente auslesen */
-  if (extractArgs(argc, argv,&svport)) {
+  if (extractArgs(argc, argv, &svport))
+  {
     err("Error while processing arguments\n");
   }
 
   /* listensocket erzeugen und vorbereiten */
-  if(create_listensocket(&listensocket, svport)) {
+  if (create_listensocket(&listensocket, svport))
+  {
     err("Error in listensocket()\n");
   }
 
-  printf("Server is listening on port %d\n", svport);
-  fflush(stdout);
-
   /* Service-Schleife */
-  while (1) {
+  while (1)
+  {
     int connsocket, retval;
     clientrequest req;
-    
+
     /* Eingehende Verbindung akzeptieren */
     connsocket = accept_client(listensocket);
 
     /* Eingabe: Client-Request vom socket lesen */
     retval = recv_clientrequest(connsocket, &req);
-    if(retval) {
+    if (retval)
+    {
       fprintf(stderr, "receiving data failed\n");
       close(connsocket);
       continue;
     }
-    
-    /* Verarbeitung und evtl. R�ckgabe an den Client */
-    switch(req.cmd) {
-    
-      case FP_GET:
-        retval = process_get_request(connsocket, &req);
-        if(retval) {
-           close(connsocket);
-           fprintf(stderr, "process_get_request() failed\n");
-           continue;
-        }
+
+    /* Verarbeitung und evtl. Rueckgabe an den Client */
+    switch (req.cmd)
+    {
+
+    case FP_GET:
+      retval = process_get_request(connsocket, &req);
+      if (retval)
+      {
+        close(connsocket);
+        fprintf(stderr, "process_get_request() failed\n");
+        continue;
+      }
       break;
-      
-      default:
-        printf("Unknown Clientrequest");
+
+    default:
+      printf("Unknown Clientrequest");
     }
 
     /* Verbindung beenden und socket freigeben */
