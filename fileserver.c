@@ -15,7 +15,7 @@
 #include "servernetoperations.h"
 #include "common.h"
 
-/* �berpr�fen und Auslesen der Kommandozeilenparameter,
+/* Ueberpruefen und Auslesen der Kommandozeilenparameter,
    setzt globale Variable svport */
 int extractArgs(int argc, char **argv, short *svport)
 {
