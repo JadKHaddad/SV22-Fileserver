@@ -22,7 +22,6 @@
    Gibt -1 bei Fehler und 0 bei Erfolg zurueck */
 int create_listensocket(int *listensocket, int svport)
 {
-
   struct sockaddr_in my_addr;
 
   *listensocket = socket(AF_INET, SOCK_STREAM, 0);
