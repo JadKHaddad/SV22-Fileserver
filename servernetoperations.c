@@ -39,11 +39,13 @@ int create_listensocket(int *listensocket, int svport)
   if (bind(*listensocket, (struct sockaddr *)&my_addr,
            sizeof(my_addr)) == -1)
   {
+    close(*listensocket);
     perror("bind");
     return -1;
   }
   if (listen(*listensocket, LISTENBACKLOG) == -1)
   {
+    close(*listensocket);
     perror("listen");
     return -1;
   }
@@ -58,11 +60,12 @@ int create_listensocket(int *listensocket, int svport)
 int recv_clientrequest(int sock, clientrequest *req)
 {
   int bytesrcvd = recv(sock, (void *)req, sizeof(clientrequest), 0);
-  if (bytesrcvd < 0)
+  if (bytesrcvd <= 0)
   {
     perror("recv");
     return -1;
   }
+  req->cmd = ntohl(req->cmd); /*host byte order*/
   return 0;
 }
 
@@ -76,22 +79,28 @@ int recv_clientrequest(int sock, clientrequest *req)
    Gibt -1 bei Fehler und 0 bei Erfolg zurueck */
 int send_response_and_file(int socket, serverresponse resp, char *filebuffer)
 {
-  // send message
-  int len = (int)sizeof(serverresponse);
-  int sent = sendMsg(socket, (void *)&resp, &len);
-  if (sent == -1)
+  int size = sizeof(resp), retval, filelen = resp.filelen;
+
+  /* byte-order beachten */
+  resp.retcode = htonl(resp.retcode); /*network byte order*/
+  resp.filelen = htonl(resp.filelen); /*network byte order*/
+
+  /* response senden */
+  retval = sendMsg(socket, (char *)&resp, &size);
+  if (size != sizeof(resp))
   {
-    perror("sendMsg");
+    perror("send");
     return -1;
   }
-  // send file
-  if (filebuffer != NULL && resp.filelen > 0)
+
+  /* Datei senden, falls vorhanden und L�nge != 0 */
+  size = filelen;
+  if (size != 0 && file != NULL && retval != -1)
   {
-    len = resp.filelen;
-    sent = sendMsg(socket, (void *)filebuffer, &len);
-    if (sent == -1)
+    retval = sendMsg(socket, (char *)file, &size);
+    if (size != filelen)
     {
-      perror("sendMsg");
+      perror("send");
       return -1;
     }
   }
@@ -111,6 +120,7 @@ int accept_client(int listensocket)
                &peer_addr_size);
   if (cfd == -1)
   {
+    close(listensocket);
     perror("accept");
     return -1;
   }

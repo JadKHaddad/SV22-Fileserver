@@ -49,8 +49,19 @@ int connect_server(int *sock, char *hostname, short svport)
 */
 int send_request(int sock, clientrequest *req)
 {
-  int len = (int)sizeof(clientrequest);
-  return sendMsg(sock, (void *)req, &len);
+  int retval, send_msg_size;
+
+  req->reqlen = htonl(req->reqlen); /*network byte order*/
+  req->cmd = htonl(req->cmd);       /*network byte order*/
+  /* Nachricht senden */
+  send_msg_size = sizeof(clientrequest);
+  retval = sendMsg(sock, (char *)req, &send_msg_size);
+  if (send_msg_size != sizeof(clientrequest))
+  {
+    perror("send");
+    return -1;
+  }
+  return 0;
 }
 
 /* Datei über socket empfangen und ausgeben.
@@ -61,16 +72,21 @@ int send_request(int sock, clientrequest *req)
  */
 int recv_and_print_file(int sock, int filelen)
 {
-  char buf[BUFSIZE];
-  int rec = recv(sock, buf, BUFSIZE - 1, filelen);
-  if (rec == -1)
+  int filerecvd = 0, bytesrcvd = 0;
+  char buffer[BUFSIZE];
+
+  while (filerecvd < filelen)
   {
-    perror("recv");
-    return -1;
+    bytesrcvd = recv(sock, buffer, BUFSIZE - 1, 0);
+    if (bytesrcvd <= 0)
+    {
+      perror("recv");
+      return -1;
+    }
+    buffer[bytesrcvd] = '\0';
+    fprintf(stdout, "%s", buffer);
+    filerecvd += bytesrcvd;
   }
-  buf[rec] = '\0';
-  printf("%s\n", buf);
-  fflush(stdout);
   return 0;
 }
 
@@ -80,11 +96,21 @@ int recv_and_print_file(int sock, int filelen)
    Gibt -1 bei Fehler und 0 bei Erfolg zurueck */
 int recv_reply(int sock, serverresponse *resp)
 {
-  int bytesrcvd = recv(sock, (void *)resp, sizeof(serverresponse), 0);
-  if (bytesrcvd < 0)
+  int bytesrcvd = 0, rcvd = 0;
+
+  /* Antwort empfangen */
+  while (bytesrcvd < sizeof(serverresponse))
   {
-    perror("recv");
-    return -1;
+    rcvd = recv(sock, ((char *)resp) + bytesrcvd,
+                sizeof(serverresponse) - bytesrcvd, 0);
+    if (rcvd <= 0)
+    {
+      perror("recv");
+      return -1;
+    }
+    bytesrcvd += rcvd;
   }
+  resp->retcode = ntohl(resp->retcode); /* host byte order */
+  resp->filelen = ntohl(resp->filelen); /* host byte order */
   return 0;
 }
